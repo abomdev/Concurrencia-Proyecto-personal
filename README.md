@@ -6,7 +6,7 @@ Practicar concurrencia: evitar que dos personas reserven el mismo asiento de cin
 
 ## La solución
 
-Un sistema de boletería full-stack (Vue 3 + Node.js/Express + SQLite) donde la reserva de un asiento se resuelve con una operación atómica en base de datos, garantizando que ante dos peticiones simultáneas por el mismo asiento, exactamente una tenga éxito.
+Un sistema de boletería Full-Stack (Vue 3 + Node.js/Express + SQLite) donde la reserva de un asiento se resuelve con una operación atómica en base de datos, garantizando que ante dos peticiones simultáneas por el mismo asiento, exactamente una tenga éxito.
 
 ## Cómo lo resolví
 
