@@ -10,6 +10,16 @@ mkdirSync(dataDir, { recursive: true })
 export const db = new DatabaseSync(join(dataDir, 'cine.db'))
 
 db.exec(`
+  CREATE TABLE IF NOT EXISTS peliculas (
+    id INTEGER PRIMARY KEY,
+    nombre TEXT NOT NULL UNIQUE,
+    poster TEXT,
+    duracion_minutos INTEGER,
+    sinopsis TEXT,
+    genero TEXT,
+    clasificacion TEXT
+  );
+
   CREATE TABLE IF NOT EXISTS funciones (
     id INTEGER PRIMARY KEY,
     pelicula TEXT NOT NULL,
@@ -34,65 +44,179 @@ db.exec(`
   );
 `)
 
-const funcionesSemilla = [
+const peliculasSemilla = [
   {
-    pelicula: 'El Caballero Oscuro',
-    sala: 'Sala 1',
-    horario: '2026-07-12 18:30',
+    nombre: 'El Caballero Oscuro',
     poster: '/posters/el-caballero-oscuro.jpg',
     duracion_minutos: 152,
     sinopsis: 'Batman se enfrenta al Joker, un criminal que busca sumir Ciudad Gótica en el caos.',
+    genero: 'Acción',
+    clasificacion: '+14',
   },
   {
-    pelicula: 'El Padrino',
-    sala: 'Sala 2',
-    horario: '2026-07-12 20:00',
+    nombre: 'El Padrino',
     poster: '/posters/el-padrino.jpg',
     duracion_minutos: 175,
     sinopsis: 'La historia de la familia Corleone y su lugar en el crimen organizado de Nueva York.',
+    genero: 'Drama',
+    clasificacion: '+18',
   },
   {
-    pelicula: 'Cadena Perpetua',
-    sala: 'Sala 3',
-    horario: '2026-07-12 21:15',
+    nombre: 'Cadena Perpetua',
     poster: '/posters/cadena-perpetua.jpg',
     duracion_minutos: 142,
     sinopsis: 'Un hombre condenado injustamente se aferra a la esperanza durante años en prisión.',
+    genero: 'Drama',
+    clasificacion: '+14',
   },
 ]
 
+const horariosSemilla = [
+  {
+    pelicula: 'El Caballero Oscuro',
+    horarios: [
+      { sala: 'Sala 1', horario: '2026-07-12 18:30' },
+      { sala: 'Sala 1', horario: '2026-07-12 21:30' },
+      { sala: 'Sala 3', horario: '2026-07-13 20:15' },
+    ],
+  },
+  {
+    pelicula: 'El Padrino',
+    horarios: [
+      { sala: 'Sala 2', horario: '2026-07-12 20:00' },
+      { sala: 'Sala 4', horario: '2026-07-13 17:45' },
+    ],
+  },
+  {
+    pelicula: 'Cadena Perpetua',
+    horarios: [
+      { sala: 'Sala 3', horario: '2026-07-12 21:15' },
+      { sala: 'Sala 2', horario: '2026-07-13 19:00' },
+      { sala: 'Sala 1', horario: '2026-07-14 16:30' },
+    ],
+  },
+]
+
+// Agrega pelicula_id a funciones si falta. Las columnas legado (pelicula, poster,
+// duracion_minutos, sinopsis) NO se vuelven a agregar aqui: una vez migradas a
+// peliculas y eliminadas de funciones (mas abajo), deben quedar afuera para siempre.
 function migrarFunciones() {
   const columnas = db.prepare('PRAGMA table_info(funciones)').all().map((c) => c.name)
-  if (!columnas.includes('poster')) db.exec('ALTER TABLE funciones ADD COLUMN poster TEXT')
-  if (!columnas.includes('duracion_minutos')) {
-    db.exec('ALTER TABLE funciones ADD COLUMN duracion_minutos INTEGER')
+  if (!columnas.includes('pelicula_id')) {
+    db.exec('ALTER TABLE funciones ADD COLUMN pelicula_id INTEGER')
   }
-  if (!columnas.includes('sinopsis')) db.exec('ALTER TABLE funciones ADD COLUMN sinopsis TEXT')
 }
 
 migrarFunciones()
 
-// Completa poster/duracion/sinopsis en funciones que ya existian antes de esta migracion
-// (quedaron en NULL al agregar las columnas), sin tocar sus reservas ya hechas.
-function completarDatosExistentes() {
-  const actualizar = db.prepare(
-    'UPDATE funciones SET poster = ?, duracion_minutos = ?, sinopsis = ? '
-    + 'WHERE pelicula = ? AND poster IS NULL',
+// Migra funciones que todavia tienen los datos de la pelicula en sus propias
+// columnas (formato viejo) hacia la tabla peliculas, sin tocar sus asientos/reservas.
+// No-op una vez que la columna legado 'pelicula' ya fue eliminada de funciones.
+function backfillPeliculasDesdeFunciones() {
+  const columnas = db.prepare('PRAGMA table_info(funciones)').all().map((c) => c.name)
+  if (!columnas.includes('pelicula')) return
+
+  const legado = db
+    .prepare(
+      'SELECT DISTINCT pelicula, poster, duracion_minutos, sinopsis FROM funciones '
+      + 'WHERE pelicula_id IS NULL',
+    )
+    .all()
+  if (legado.length === 0) return
+
+  const buscarPelicula = db.prepare('SELECT id FROM peliculas WHERE nombre = ?')
+  const crearPelicula = db.prepare(
+    'INSERT INTO peliculas (nombre, poster, duracion_minutos, sinopsis, genero, clasificacion) '
+    + 'VALUES (?, ?, ?, ?, ?, ?)',
   )
-  for (const funcion of funcionesSemilla) {
-    actualizar.run(funcion.poster, funcion.duracion_minutos, funcion.sinopsis, funcion.pelicula)
+  const asignarPeliculaId = db.prepare(
+    'UPDATE funciones SET pelicula_id = ? WHERE pelicula = ? AND pelicula_id IS NULL',
+  )
+
+  for (const fila of legado) {
+    const semilla = peliculasSemilla.find((p) => p.nombre === fila.pelicula)
+
+    let peliculaId = buscarPelicula.get(fila.pelicula)?.id
+    if (!peliculaId) {
+      const datos = semilla ?? {
+        nombre: fila.pelicula,
+        poster: fila.poster,
+        duracion_minutos: fila.duracion_minutos,
+        sinopsis: fila.sinopsis,
+        genero: null,
+        clasificacion: null,
+      }
+      const resultado = crearPelicula.run(
+        datos.nombre,
+        datos.poster,
+        datos.duracion_minutos,
+        datos.sinopsis,
+        datos.genero,
+        datos.clasificacion,
+      )
+      peliculaId = resultado.lastInsertRowid
+    }
+
+    asignarPeliculaId.run(peliculaId, fila.pelicula)
   }
 }
 
-completarDatosExistentes()
+backfillPeliculasDesdeFunciones()
 
-function sembrarSiHaceFalta() {
-  const { total } = db.prepare('SELECT COUNT(*) AS total FROM funciones').get()
-  if (total > 0) return
+// Limpia las columnas de funciones que quedaron redundantes tras moverse a peliculas.
+// Se salta a si misma si ya se ejecuto en un arranque anterior (columna 'pelicula'
+// ya no existe), y se niega a borrar si todavia queda algo sin migrar (defensivo).
+function eliminarColumnasRedundantesDeFunciones() {
+  const columnas = db.prepare('PRAGMA table_info(funciones)').all().map((c) => c.name)
+  if (!columnas.includes('pelicula')) return
 
-  const insertarFuncion = db.prepare(
-    'INSERT INTO funciones (pelicula, sala, horario, poster, duracion_minutos, sinopsis) '
+  const { pendientes } = db
+    .prepare('SELECT COUNT(*) AS pendientes FROM funciones WHERE pelicula_id IS NULL')
+    .get()
+  if (pendientes > 0) {
+    console.warn(
+      `No se eliminaron columnas redundantes de funciones: quedan ${pendientes} fila(s) sin pelicula_id.`,
+    )
+    return
+  }
+
+  for (const columna of ['pelicula', 'poster', 'duracion_minutos', 'sinopsis']) {
+    try {
+      db.exec(`ALTER TABLE funciones DROP COLUMN ${columna}`)
+    } catch (error) {
+      console.warn(`No se pudo eliminar la columna '${columna}' de funciones:`, error.message)
+    }
+  }
+}
+
+eliminarColumnasRedundantesDeFunciones()
+
+function sembrarPeliculasFaltantes() {
+  const insertar = db.prepare(
+    'INSERT OR IGNORE INTO peliculas (nombre, poster, duracion_minutos, sinopsis, genero, clasificacion) '
     + 'VALUES (?, ?, ?, ?, ?, ?)',
+  )
+  for (const pelicula of peliculasSemilla) {
+    insertar.run(
+      pelicula.nombre,
+      pelicula.poster,
+      pelicula.duracion_minutos,
+      pelicula.sinopsis,
+      pelicula.genero,
+      pelicula.clasificacion,
+    )
+  }
+}
+
+sembrarPeliculasFaltantes()
+
+function sembrarFuncionesFaltantes() {
+  const buscarPeliculaId = db.prepare('SELECT id FROM peliculas WHERE nombre = ?')
+  const buscarFuncion = db.prepare(
+    'SELECT id FROM funciones WHERE pelicula_id = ? AND sala = ? AND horario = ?',
+  )
+  const insertarFuncion = db.prepare(
+    'INSERT INTO funciones (pelicula_id, sala, horario) VALUES (?, ?, ?)',
   )
   const insertarAsiento = db.prepare(
     'INSERT INTO asientos (funcion_id, fila, numero) VALUES (?, ?, ?)',
@@ -101,23 +225,24 @@ function sembrarSiHaceFalta() {
   const filas = ['A', 'B', 'C', 'D', 'E', 'F']
   const asientosPorFila = 8
 
-  for (const funcion of funcionesSemilla) {
-    const resultado = insertarFuncion.run(
-      funcion.pelicula,
-      funcion.sala,
-      funcion.horario,
-      funcion.poster,
-      funcion.duracion_minutos,
-      funcion.sinopsis,
-    )
-    const funcionId = resultado.lastInsertRowid
+  for (const entrada of horariosSemilla) {
+    const peliculaId = buscarPeliculaId.get(entrada.pelicula)?.id
+    if (!peliculaId) continue
 
-    for (const fila of filas) {
-      for (let numero = 1; numero <= asientosPorFila; numero++) {
-        insertarAsiento.run(funcionId, fila, numero)
+    for (const horario of entrada.horarios) {
+      const existente = buscarFuncion.get(peliculaId, horario.sala, horario.horario)
+      if (existente) continue
+
+      const resultado = insertarFuncion.run(peliculaId, horario.sala, horario.horario)
+      const funcionId = resultado.lastInsertRowid
+
+      for (const fila of filas) {
+        for (let numero = 1; numero <= asientosPorFila; numero++) {
+          insertarAsiento.run(funcionId, fila, numero)
+        }
       }
     }
   }
 }
 
-sembrarSiHaceFalta()
+sembrarFuncionesFaltantes()
