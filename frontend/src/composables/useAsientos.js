@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import axios from 'axios'
+import { api } from '@/api'
 
 export function useAsientos() {
   const asientos = ref([])
@@ -11,7 +11,7 @@ export function useAsientos() {
     error.value = ''
 
     try {
-      const respuesta = await axios.get(`/api/funciones/${funcionId}/asientos`)
+      const respuesta = await api.get(`/funciones/${funcionId}/asientos`)
       asientos.value = respuesta.data
     } catch {
       error.value = 'No se pudo cargar el mapa de asientos.'
@@ -22,7 +22,7 @@ export function useAsientos() {
 
   async function reservar(asientoId, nombreComprador) {
     try {
-      await axios.post('/api/reservas', { asientoId, nombreComprador })
+      await api.post('/reservas', { asientoId, nombreComprador })
       const asiento = asientos.value.find((item) => item.id === asientoId)
       if (asiento) asiento.estado = 'reservado'
       return { exito: true }

@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import axios from 'axios'
+import { api } from '@/api'
 
 export function useFunciones() {
   const funciones = ref([])
@@ -11,7 +11,7 @@ export function useFunciones() {
     error.value = ''
 
     try {
-      const respuesta = await axios.get('/api/funciones')
+      const respuesta = await api.get('/funciones')
       funciones.value = respuesta.data
     } catch {
       error.value = 'No se pudieron cargar las funciones. ¿Está corriendo el backend?'
