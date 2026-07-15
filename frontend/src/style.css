@@ -41,14 +41,47 @@ body {
   padding: 2rem 1.5rem 4rem;
 }
 
-.header h1 {
-  color: var(--text-h);
-  margin: 0 0 0.25rem;
-  font-size: 1.6rem;
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
 }
 
-.subtitle {
-  margin: 0 0 1.5rem;
+.app-header-inner {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 0.9rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.app-logo {
+  color: var(--text-h);
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.app-nav {
+  display: flex;
+  gap: 1.25rem;
+}
+
+.app-nav button {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--text);
+  font-size: 0.85rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.app-nav button:hover {
+  color: var(--accent);
 }
 
 .hint {
@@ -64,13 +97,36 @@ body {
   font-size: 0.9rem;
 }
 
-.funciones-grid {
+.buscador {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 1.25rem;
+}
+
+.buscador input {
+  flex: 1;
+  min-width: 180px;
+}
+
+.buscador input,
+.buscador select {
+  font-family: inherit;
+  font-size: 0.9rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+}
+
+.peliculas-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 1.25rem;
 }
 
-.funcion-card {
+.pelicula-card {
   display: flex;
   flex-direction: column;
   text-align: left;
@@ -84,25 +140,25 @@ body {
   transition: border-color 0.15s ease, transform 0.15s ease;
 }
 
-.funcion-card:hover {
+.pelicula-card:hover {
   border-color: var(--accent);
   transform: translateY(-2px);
 }
 
-.funcion-poster {
+.pelicula-poster {
   position: relative;
   aspect-ratio: 2 / 3;
   background: linear-gradient(160deg, var(--accent), color-mix(in srgb, var(--accent) 35%, var(--bg)));
 }
 
-.funcion-poster-img {
+.pelicula-poster-img {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.funcion-poster-fallback {
+.pelicula-poster-fallback {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -115,7 +171,7 @@ body {
   font-size: 0.95rem;
 }
 
-.funcion-duracion {
+.pelicula-duracion {
   position: absolute;
   right: 0.5rem;
   bottom: 0.5rem;
@@ -126,14 +182,37 @@ body {
   font-size: 0.7rem;
 }
 
-.funcion-info {
+.pelicula-info {
   padding: 1rem 1.1rem 1.15rem;
 }
 
-.funcion-pelicula {
+.pelicula-nombre {
   color: var(--text-h);
   font-size: 1.05rem;
   margin: 0 0 0.35rem;
+}
+
+.pelicula-badges {
+  display: flex;
+  gap: 0.4rem;
+  margin: 0;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+}
+
+.badge-genero {
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  color: var(--text-h);
+}
+
+.badge-clasificacion {
+  border: 1px solid var(--border);
+  color: var(--text);
 }
 
 .funcion-detalle {
@@ -177,6 +256,48 @@ body {
 .funcion-titulo {
   color: var(--text-h);
   margin: 1rem 0 0.25rem;
+}
+
+.horarios-titulo {
+  color: var(--text-h);
+  font-size: 0.95rem;
+  margin: 1.25rem 0 0.75rem;
+}
+
+.horarios-lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.horario-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  padding: 0.55rem 0.9rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.15s ease, transform 0.1s ease;
+}
+
+.horario-btn:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.horario-sala {
+  font-size: 0.75rem;
+  color: var(--text);
+}
+
+.horario-hora {
+  font-size: 0.9rem;
+  font-weight: 600;
 }
 
 .btn-link {

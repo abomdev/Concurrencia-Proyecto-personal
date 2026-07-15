@@ -1,38 +1,66 @@
 <template>
+  <AppHeader @ir-a-cartelera="volverACartelera" />
+
   <main class="container">
-    <header class="header">
-      <h1>Boletería de Cine</h1>
-      <p class="subtitle">Elige tu función y reserva un asiento.</p>
-    </header>
+    <section v-if="!peliculaSeleccionada" class="view">
+      <div class="buscador">
+        <input v-model.trim="busqueda" type="text" placeholder="Buscar película..." />
+        <select v-model="generoSeleccionado">
+          <option v-for="genero in generos" :key="genero" :value="genero">{{ genero }}</option>
+        </select>
+      </div>
 
-    <section v-if="!funcionSeleccionada" class="view">
-      <p v-if="cargandoFunciones" class="hint">Cargando funciones...</p>
-      <p v-else-if="errorFunciones" class="error-banner">{{ errorFunciones }}</p>
+      <p v-if="cargandoPeliculas" class="hint">Cargando cartelera...</p>
+      <p v-else-if="errorPeliculas" class="error-banner">{{ errorPeliculas }}</p>
+      <p v-else-if="peliculasFiltradas.length === 0" class="hint">No hay películas que coincidan con la búsqueda.</p>
 
-      <div v-else class="funciones-grid">
-        <FuncionCard
-          v-for="funcion in funciones"
-          :key="funcion.id"
-          :funcion="funcion"
-          @elegir="elegirFuncion"
+      <div v-else class="peliculas-grid">
+        <PeliculaCard
+          v-for="pelicula in peliculasFiltradas"
+          :key="pelicula.id"
+          :pelicula="pelicula"
+          @elegir="elegirPelicula"
         />
       </div>
     </section>
 
-    <section v-else class="view">
-      <button class="btn-link" @click="volverAFunciones">&larr; Volver a funciones</button>
+    <section v-else-if="!funcionSeleccionada" class="view">
+      <button class="btn-link" @click="volverACartelera">&larr; Volver a cartelera</button>
 
       <div
         class="funcion-hero"
-        :style="funcionSeleccionada.poster ? { backgroundImage: `url(${funcionSeleccionada.poster})` } : {}"
+        :style="peliculaSeleccionada.poster ? { backgroundImage: `url(${peliculaSeleccionada.poster})` } : {}"
       >
         <div class="funcion-hero-overlay">
-          <h2 class="funcion-titulo">{{ funcionSeleccionada.pelicula }}</h2>
+          <h2 class="funcion-titulo">{{ peliculaSeleccionada.nombre }}</h2>
+          <p class="funcion-detalle">
+            <span v-if="peliculaSeleccionada.genero">{{ peliculaSeleccionada.genero }}</span>
+            <span v-if="peliculaSeleccionada.clasificacion"> - {{ peliculaSeleccionada.clasificacion }}</span>
+            <span v-if="peliculaSeleccionada.duracion_minutos"> - {{ peliculaSeleccionada.duracion_minutos }} min</span>
+          </p>
+          <p v-if="peliculaSeleccionada.sinopsis" class="funcion-sinopsis">{{ peliculaSeleccionada.sinopsis }}</p>
+        </div>
+      </div>
+
+      <h3 class="horarios-titulo">Elige un horario</h3>
+      <p v-if="errorHorarios" class="error-banner">{{ errorHorarios }}</p>
+      <HorarioSelector v-else :horarios="horarios" :cargando="cargandoHorarios" @elegir="elegirHorario" />
+    </section>
+
+    <section v-else class="view">
+      <button class="btn-link" @click="volverAHorarios">&larr; Volver a horarios</button>
+
+      <div
+        class="funcion-hero"
+        :style="peliculaSeleccionada.poster ? { backgroundImage: `url(${peliculaSeleccionada.poster})` } : {}"
+      >
+        <div class="funcion-hero-overlay">
+          <h2 class="funcion-titulo">{{ peliculaSeleccionada.nombre }}</h2>
           <p class="funcion-detalle">
             {{ funcionSeleccionada.sala }} - {{ funcionSeleccionada.horario }}
-            <span v-if="funcionSeleccionada.duracion_minutos"> - {{ funcionSeleccionada.duracion_minutos }} min</span>
+            <span v-if="peliculaSeleccionada.duracion_minutos"> - {{ peliculaSeleccionada.duracion_minutos }} min</span>
           </p>
-          <p v-if="funcionSeleccionada.sinopsis" class="funcion-sinopsis">{{ funcionSeleccionada.sinopsis }}</p>
+          <p v-if="peliculaSeleccionada.sinopsis" class="funcion-sinopsis">{{ peliculaSeleccionada.sinopsis }}</p>
         </div>
       </div>
 
@@ -68,21 +96,32 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
-import { useFunciones } from '@/composables/useFunciones'
+import { computed, onMounted, ref } from 'vue'
+import { usePeliculas } from '@/composables/usePeliculas'
+import { useHorarios } from '@/composables/useHorarios'
 import { useAsientos } from '@/composables/useAsientos'
-import FuncionCard from '@/components/FuncionCard.vue'
+import AppHeader from '@/components/AppHeader.vue'
+import PeliculaCard from '@/components/PeliculaCard.vue'
+import HorarioSelector from '@/components/HorarioSelector.vue'
 import SeatMap from '@/components/SeatMap.vue'
 
 const {
-  funciones,
-  cargando: cargandoFunciones,
-  error: errorFunciones,
-  cargarFunciones,
-} = useFunciones()
+  peliculas,
+  cargando: cargandoPeliculas,
+  error: errorPeliculas,
+  cargarPeliculas,
+} = usePeliculas()
+
+const {
+  horarios,
+  cargando: cargandoHorarios,
+  error: errorHorarios,
+  cargarHorarios,
+} = useHorarios()
 
 const { asientos, cargando: cargandoAsientos, cargarAsientos, reservar } = useAsientos()
 
+const peliculaSeleccionada = ref(null)
 const funcionSeleccionada = ref(null)
 const asientoSeleccionadoId = ref(null)
 const nombreComprador = ref('')
@@ -90,19 +129,47 @@ const reservando = ref(false)
 const mensaje = ref('')
 const mensajeExito = ref(false)
 
+const busqueda = ref('')
+const generoSeleccionado = ref('Todos')
+
+const generos = computed(() => [
+  'Todos',
+  ...new Set(peliculas.value.map((p) => p.genero).filter(Boolean)),
+])
+
+const peliculasFiltradas = computed(() => peliculas.value.filter((pelicula) => {
+  const coincideNombre = pelicula.nombre.toLowerCase().includes(busqueda.value.toLowerCase())
+  const coincideGenero = generoSeleccionado.value === 'Todos' || pelicula.genero === generoSeleccionado.value
+  return coincideNombre && coincideGenero
+}))
+
 onMounted(() => {
-  cargarFunciones()
+  cargarPeliculas()
 })
 
-function elegirFuncion(funcion) {
-  funcionSeleccionada.value = funcion
-  asientoSeleccionadoId.value = null
-  mensaje.value = ''
-  cargarAsientos(funcion.id)
+function elegirPelicula(pelicula) {
+  peliculaSeleccionada.value = pelicula
+  funcionSeleccionada.value = null
+  cargarHorarios(pelicula.id)
 }
 
-function volverAFunciones() {
+function elegirHorario(horario) {
+  funcionSeleccionada.value = horario
+  asientoSeleccionadoId.value = null
+  mensaje.value = ''
+  cargarAsientos(horario.id)
+}
+
+function volverAHorarios() {
   funcionSeleccionada.value = null
+  asientos.value = []
+  mensaje.value = ''
+}
+
+function volverACartelera() {
+  peliculaSeleccionada.value = null
+  funcionSeleccionada.value = null
+  horarios.value = []
   asientos.value = []
   mensaje.value = ''
 }
