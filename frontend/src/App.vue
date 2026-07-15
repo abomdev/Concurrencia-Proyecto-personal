@@ -22,8 +22,19 @@
     <section v-else class="view">
       <button class="btn-link" @click="volverAFunciones">&larr; Volver a funciones</button>
 
-      <h2 class="funcion-titulo">{{ funcionSeleccionada.pelicula }}</h2>
-      <p class="funcion-detalle">{{ funcionSeleccionada.sala }} - {{ funcionSeleccionada.horario }}</p>
+      <div
+        class="funcion-hero"
+        :style="funcionSeleccionada.poster ? { backgroundImage: `url(${funcionSeleccionada.poster})` } : {}"
+      >
+        <div class="funcion-hero-overlay">
+          <h2 class="funcion-titulo">{{ funcionSeleccionada.pelicula }}</h2>
+          <p class="funcion-detalle">
+            {{ funcionSeleccionada.sala }} - {{ funcionSeleccionada.horario }}
+            <span v-if="funcionSeleccionada.duracion_minutos"> - {{ funcionSeleccionada.duracion_minutos }} min</span>
+          </p>
+          <p v-if="funcionSeleccionada.sinopsis" class="funcion-sinopsis">{{ funcionSeleccionada.sinopsis }}</p>
+        </div>
+      </div>
 
       <p v-if="cargandoAsientos" class="hint">Cargando asientos...</p>
 
