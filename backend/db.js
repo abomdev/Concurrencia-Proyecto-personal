@@ -69,6 +69,54 @@ const peliculasSemilla = [
     genero: 'Drama',
     clasificacion: '+14',
   },
+  {
+    nombre: 'Pulp Fiction',
+    poster: '/posters/pulp-fiction.jpg',
+    duracion_minutos: 154,
+    sinopsis: 'Las vidas de dos sicarios, un boxeador y una pareja de asaltantes se entrelazan en una serie de historias de crimen en Los Ángeles.',
+    genero: 'Crimen',
+    clasificacion: '+18',
+  },
+  {
+    nombre: 'Forrest Gump',
+    poster: '/posters/forrest-gump.jpg',
+    duracion_minutos: 142,
+    sinopsis: 'Un hombre de buen corazón e intelecto limitado atraviesa décadas de la historia de Estados Unidos dejando una huella inesperada en cada una.',
+    genero: 'Drama',
+    clasificacion: '+14',
+  },
+  {
+    nombre: 'Matrix',
+    poster: '/posters/matrix.jpg',
+    duracion_minutos: 136,
+    sinopsis: 'Un programador descubre que la realidad que conoce es una simulación y se une a la resistencia humana contra las máquinas que la controlan.',
+    genero: 'Ciencia Ficción',
+    clasificacion: '+14',
+  },
+  {
+    nombre: 'El Señor de los Anillos: El Retorno del Rey',
+    poster: '/posters/el-senor-de-los-anillos-el-retorno-del-rey.jpg',
+    duracion_minutos: 201,
+    sinopsis: 'La comunidad enfrenta la batalla final contra las fuerzas de Sauron mientras Frodo se acerca al Monte del Destino para destruir el anillo.',
+    genero: 'Fantasía',
+    clasificacion: '+14',
+  },
+  {
+    nombre: 'Coco',
+    poster: '/posters/coco.jpg',
+    duracion_minutos: 105,
+    sinopsis: 'Un niño con sueños de músico es transportado a la Tierra de los Muertos, donde descubre la verdadera historia de su familia.',
+    genero: 'Animación',
+    clasificacion: 'TE',
+  },
+  {
+    nombre: 'El Exorcista',
+    poster: '/posters/el-exorcista.jpg',
+    duracion_minutos: 122,
+    sinopsis: 'Una madre busca ayuda cuando su hija comienza a mostrar signos de una posesión demoníaca inexplicable.',
+    genero: 'Terror',
+    clasificacion: '+18',
+  },
 ]
 
 const FILAS_PREFERENCIAL = ['C', 'D']
@@ -100,6 +148,50 @@ const horariosSemilla = [
       { sala: 'Sala 3', horario: '2026-07-12 21:15' },
       { sala: 'Sala 2', horario: '2026-07-13 19:00' },
       { sala: 'Sala 1', horario: '2026-07-14 16:30' },
+    ],
+  },
+  {
+    pelicula: 'Pulp Fiction',
+    horarios: [
+      { sala: 'Sala 2', horario: '2026-07-12 22:30' },
+      { sala: 'Sala 4', horario: '2026-07-13 20:30' },
+    ],
+  },
+  {
+    pelicula: 'Forrest Gump',
+    horarios: [
+      { sala: 'Sala 1', horario: '2026-07-13 15:00' },
+      { sala: 'Sala 3', horario: '2026-07-14 18:00' },
+    ],
+  },
+  {
+    pelicula: 'Matrix',
+    horarios: [
+      { sala: 'Sala 4', horario: '2026-07-12 19:15' },
+      { sala: 'Sala 1', horario: '2026-07-14 21:00' },
+      { sala: 'Sala 2', horario: '2026-07-15 20:00' },
+    ],
+  },
+  {
+    pelicula: 'El Señor de los Anillos: El Retorno del Rey',
+    horarios: [
+      { sala: 'Sala 3', horario: '2026-07-12 17:00' },
+      { sala: 'Sala 2', horario: '2026-07-14 16:00' },
+    ],
+  },
+  {
+    pelicula: 'Coco',
+    horarios: [
+      { sala: 'Sala 4', horario: '2026-07-13 14:30' },
+      { sala: 'Sala 1', horario: '2026-07-14 13:00' },
+      { sala: 'Sala 3', horario: '2026-07-15 15:30' },
+    ],
+  },
+  {
+    pelicula: 'El Exorcista',
+    horarios: [
+      { sala: 'Sala 2', horario: '2026-07-13 23:00' },
+      { sala: 'Sala 4', horario: '2026-07-14 22:45' },
     ],
   },
 ]
