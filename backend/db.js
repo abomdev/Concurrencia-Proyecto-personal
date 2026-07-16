@@ -71,6 +71,13 @@ const peliculasSemilla = [
   },
 ]
 
+const FILAS_PREFERENCIAL = ['C', 'D']
+const PRECIOS_POR_TIPO = { Regular: 4000, Preferencial: 6000 }
+
+function tipoDeFila(fila) {
+  return FILAS_PREFERENCIAL.includes(fila) ? 'Preferencial' : 'Regular'
+}
+
 const horariosSemilla = [
   {
     pelicula: 'El Caballero Oscuro',
@@ -108,6 +115,27 @@ function migrarFunciones() {
 }
 
 migrarFunciones()
+
+// Agrega tipo/precio a asientos si faltan, y completa los valores de los asientos
+// que ya existian antes de esta migracion segun su fila (sin tocar su estado).
+function migrarAsientos() {
+  const columnas = db.prepare('PRAGMA table_info(asientos)').all().map((c) => c.name)
+  if (!columnas.includes('tipo')) {
+    db.exec("ALTER TABLE asientos ADD COLUMN tipo TEXT NOT NULL DEFAULT 'Regular'")
+  }
+  if (!columnas.includes('precio')) db.exec('ALTER TABLE asientos ADD COLUMN precio INTEGER')
+
+  const pendientes = db.prepare('SELECT id, fila FROM asientos WHERE precio IS NULL').all()
+  if (pendientes.length === 0) return
+
+  const actualizar = db.prepare('UPDATE asientos SET tipo = ?, precio = ? WHERE id = ?')
+  for (const asiento of pendientes) {
+    const tipo = tipoDeFila(asiento.fila)
+    actualizar.run(tipo, PRECIOS_POR_TIPO[tipo], asiento.id)
+  }
+}
+
+migrarAsientos()
 
 // Migra funciones que todavia tienen los datos de la pelicula en sus propias
 // columnas (formato viejo) hacia la tabla peliculas, sin tocar sus asientos/reservas.
@@ -219,7 +247,7 @@ function sembrarFuncionesFaltantes() {
     'INSERT INTO funciones (pelicula_id, sala, horario) VALUES (?, ?, ?)',
   )
   const insertarAsiento = db.prepare(
-    'INSERT INTO asientos (funcion_id, fila, numero) VALUES (?, ?, ?)',
+    'INSERT INTO asientos (funcion_id, fila, numero, tipo, precio) VALUES (?, ?, ?, ?, ?)',
   )
 
   const filas = ['A', 'B', 'C', 'D', 'E', 'F']
@@ -237,8 +265,10 @@ function sembrarFuncionesFaltantes() {
       const funcionId = resultado.lastInsertRowid
 
       for (const fila of filas) {
+        const tipo = tipoDeFila(fila)
+        const precio = PRECIOS_POR_TIPO[tipo]
         for (let numero = 1; numero <= asientosPorFila; numero++) {
-          insertarAsiento.run(funcionId, fila, numero)
+          insertarAsiento.run(funcionId, fila, numero, tipo, precio)
         }
       }
     }
