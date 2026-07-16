@@ -4,6 +4,7 @@
     :class="{
       'asiento-reservado': asiento.estado === 'reservado',
       'asiento-seleccionado': seleccionado,
+      'asiento-preferencial': asiento.tipo === 'Preferencial',
     }"
     :disabled="asiento.estado === 'reservado'"
     @click="$emit('seleccionar', asiento)"

@@ -18,6 +18,11 @@
       <span><span class="muestra muestra-seleccionado"></span> Seleccionado</span>
       <span><span class="muestra muestra-reservado"></span> Reservado</span>
     </div>
+
+    <div class="leyenda">
+      <span v-if="precioRegular"><span class="muestra muestra-regular"></span> Regular (${{ precioRegular.toLocaleString('es-CL') }})</span>
+      <span v-if="precioPreferencial"><span class="muestra muestra-preferencial"></span> Preferencial (${{ precioPreferencial.toLocaleString('es-CL') }})</span>
+    </div>
   </div>
 </template>
 
@@ -48,4 +53,9 @@ const asientosPorFila = computed(() => {
   }
   return grupos
 })
+
+const precioRegular = computed(() => props.asientos.find((a) => a.tipo === 'Regular')?.precio)
+const precioPreferencial = computed(
+  () => props.asientos.find((a) => a.tipo === 'Preferencial')?.precio,
+)
 </script>

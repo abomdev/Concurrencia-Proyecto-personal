@@ -79,12 +79,17 @@
           <input v-model.trim="nombreComprador" type="text" placeholder="Tu nombre" />
         </label>
 
+        <p v-if="asientoSeleccionado" class="hint">
+          Asiento {{ asientoSeleccionado.fila }}{{ asientoSeleccionado.numero }}
+          ({{ asientoSeleccionado.tipo }}) - ${{ asientoSeleccionado.precio.toLocaleString('es-CL') }}
+        </p>
+
         <button
           class="btn btn-primary"
           :disabled="!asientoSeleccionadoId || !nombreComprador || reservando"
           @click="confirmarReserva"
         >
-          {{ reservando ? 'Reservando...' : 'Reservar' }}
+          {{ reservando ? 'Reservando...' : textoBotonReservar }}
         </button>
 
         <p v-if="mensaje" class="mensaje" :class="{ 'mensaje-error': !mensajeExito }">
@@ -142,6 +147,16 @@ const peliculasFiltradas = computed(() => peliculas.value.filter((pelicula) => {
   const coincideGenero = generoSeleccionado.value === 'Todos' || pelicula.genero === generoSeleccionado.value
   return coincideNombre && coincideGenero
 }))
+
+const asientoSeleccionado = computed(
+  () => asientos.value.find((a) => a.id === asientoSeleccionadoId.value) ?? null,
+)
+
+const textoBotonReservar = computed(() => (
+  asientoSeleccionado.value
+    ? `Reservar - $${asientoSeleccionado.value.precio.toLocaleString('es-CL')}`
+    : 'Reservar'
+))
 
 onMounted(() => {
   cargarPeliculas()
